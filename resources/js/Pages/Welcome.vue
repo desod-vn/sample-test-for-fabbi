@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import {Head, Link, router} from '@inertiajs/vue3';
+import {onMounted} from "vue";
 
 defineProps<{
     canLogin?: boolean;
@@ -14,6 +15,10 @@ function handleImageError() {
     document.getElementById('docs-card-content')?.classList.add('!flex-row');
     document.getElementById('background')?.classList.add('!hidden');
 }
+
+onMounted(() => {
+    router.get(route('order.index'));
+});
 </script>
 
 <template>

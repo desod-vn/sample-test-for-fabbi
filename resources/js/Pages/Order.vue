@@ -11,6 +11,7 @@ const rules: Array<Record<string, Rule[]>> = [
         ],
         people: [
             { required: true, message: 'Please Enter Number of people', trigger: 'change' },
+            { type: 'number', max: 10, min: 1 }
         ]
     },
     {
@@ -18,16 +19,13 @@ const rules: Array<Record<string, Rule[]>> = [
             { required: true, message: 'Please Select a restaurant', trigger: 'change' },
         ],
     },
-    {
-        dishes: [
-            { required: true, message: 'Please Select a restaurant', trigger: 'change' },
-        ],
-    }
 ];
 
 const currentStep = ref<number>(1);
 
 const meals = ref<Array<string>>([]);
+
+const errorMessage = ref<string>('');
 
 const restaurants = ref<any>([]);
 
@@ -61,10 +59,11 @@ const getDish = async () => {
 }
 
 watch(() => currentStep.value, () => {
-   if (currentStep.value == 2) {
-       formState.restaurant = '';
-       getRestaurant();
-   }
+    errorMessage.value = '';
+    if (currentStep.value == 2) {
+        formState.restaurant = '';
+        getRestaurant();
+    }
     if (currentStep.value == 3) {
         formState.dishes = [
             {
@@ -79,6 +78,9 @@ watch(() => currentStep.value, () => {
 getMeal();
 
 const onFinish = () => {
+    if (currentStep.value == 3 && formState.dishes.length < formState.people) {
+        return errorMessage.value = 'The number of meal is lesser than the people'
+    }
     currentStep.value++;
 }
 
@@ -86,6 +88,15 @@ const back = () => {
     currentStep.value--;
 }
 
+const addMeal = () => {
+    if (formState.dishes.length >= formState.people) {
+        return errorMessage.value = 'The number of meal is greater than the people'
+    }
+    formState.dishes.push({
+        name: '',
+        order: '',
+    });
+}
 </script>
 <template>
     <GuestLayout>
@@ -102,8 +113,8 @@ const back = () => {
             <a-form
                 :model="formState"
                 name="basic"
-                :label-col="{ span: 8 }"
-                :wrapper-col="{ span: 16 }"
+                :label-col="{ span: 10 }"
+                :wrapper-col="{ span: 14 }"
                 autocomplete="off"
                 :rules="rules[currentStep - 1]"
                 @finish="onFinish"
@@ -119,7 +130,7 @@ const back = () => {
                         </a-select>
                     </a-form-item>
                     <a-form-item ref="people" name="people" label="Please Enter Number of people">
-                        <a-input-number v-model:value="formState.people" :min="1" :max="10" />
+                        <a-input-number v-model:value="formState.people" />
                     </a-form-item>
                 </div>
 
@@ -136,8 +147,17 @@ const back = () => {
                 </div>
 
                 <div v-if="currentStep == 3">
-                    <div v-for="(dish, index) in formState.dishes" :key="index">
-                        <a-form-item ref="dishes_name" name="dishes_name" label="Please Select a meal">
+                    <div
+                        v-for="(dish, index) in formState.dishes"
+                        :key="index"
+                        class="flex justify-between"
+                    >
+                        <a-form-item
+                            class="w-1/2"
+                            :name="['dishes', index, 'name']"
+                            label="Please Select a meal"
+                            :rules="[{ required: true }]"
+                        >
                             <a-select v-model:value="dish.name">
                                 <a-select-option
                                     :value="dish.name"
@@ -146,9 +166,23 @@ const back = () => {
                                 >{{ dish.name }}</a-select-option>
                             </a-select>
                         </a-form-item>
-                        <a-form-item label="Please Enter no of servings">
-                            <a-input-number v-model:value="dish.order" :min="1" :max="formState.people" />
-                        </a-form-item>
+                        <div class="w-1/2">
+                            <a-form-item
+                                :name="['dishes', index, 'order']"
+                                label="Please Enter no of servings"
+                                :rules="[{ required: true }]"
+                            >
+                                <a-input-number
+                                    v-model:value="dish.order"
+                                    :min="1"
+                                    :max="formState.people"
+                                />
+                            </a-form-item>
+                        </div>
+                    </div>
+                    <div v-if="errorMessage" class="text-red-600">{{ errorMessage }}</div>
+                    <div class="flex justify-center items-center">
+                        <a-button @click="addMeal">ADD</a-button>
                     </div>
                 </div>
 
